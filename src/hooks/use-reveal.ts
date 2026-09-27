@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 export function useReveal() {
   useEffect(() => {
-    document.documentElement.dataset.revealReady = "true";
+    document.documentElement.dataset["revealReady"] = "true";
     const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
     if (!elements.length || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       elements.forEach((element) => element.setAttribute("data-visible", "true"));
@@ -23,7 +23,7 @@ export function useReveal() {
     elements.forEach((element) => observer.observe(element));
     return () => {
       observer.disconnect();
-      delete document.documentElement.dataset.revealReady;
+      delete document.documentElement.dataset["revealReady"];
     };
   }, []);
 }

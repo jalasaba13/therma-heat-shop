@@ -5,8 +5,8 @@
 - [x] Add product gallery, selectors, persistent cart, discount field, and mobile purchase bar
 - [x] Add THERMA metadata and technical visual system
 - [x] Verify desktop and mobile layouts and purchase flow
-- [ ] Add lightweight premium scroll and reveal system with reduced-motion support
-- [ ] Refine product showcase, micro-interactions, navigation, menu, and cart motion
-- [ ] Add scroll-led product presentation section
-- [ ] Build and validate the dedicated demo checkout flow
-- [ ] Verify all requested desktop, tablet, and mobile sizes and interactions
+- [x] Add lightweight premium scroll and reveal system with reduced-motion support
+- [x] Refine product showcase, micro-interactions, navigation, menu, and cart motion
+- [x] Add scroll-led product presentation section
+- [x] Build and validate the dedicated demo checkout flow
+- [x] Verify all requested desktop, tablet, and mobile sizes and interactions
