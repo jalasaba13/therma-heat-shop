@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { ArrowLeft, Check, CreditCard, LockKeyhole, PackageCheck, ShieldCheck } from "lucide-react";
 
 import productAsset from "@/assets/therma-balaclava.png.asset.json";
@@ -117,7 +117,7 @@ function CheckoutPage() {
   );
 }
 
-function CheckoutSection({ number, title, children }: { number: string; title: string; children: React.ReactNode }) {
+function CheckoutSection({ number, title, children }: { number: string; title: string; children: ReactNode }) {
   return <section className="border-t border-border py-8"><div className="mb-6 flex items-center gap-4"><span className="font-mono text-xs text-accent">{number}</span><h2 className="font-display text-2xl font-bold uppercase">{title}</h2></div>{children}</section>;
 }
 
