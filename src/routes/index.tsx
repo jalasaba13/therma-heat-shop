@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDown,
@@ -17,6 +17,8 @@ import {
 import productAsset from "@/assets/therma-balaclava.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { formatPrice, store } from "@/data/store";
+import { CART_KEY, type CartItem } from "@/lib/cart";
+import { useReveal } from "@/hooks/use-reveal";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -32,14 +34,6 @@ export const Route = createFileRoute("/")({
   component: Storefront,
 });
 
-type CartItem = {
-  quantity: number;
-  size: string;
-  color: string;
-};
-
-const CART_KEY = "therma-cart-v1";
-
 function Storefront() {
   const { brand, product, faq, policies } = store;
   const [menuOpen, setMenuOpen] = useState(false);
@@ -51,6 +45,10 @@ function Storefront() {
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
   const [discount, setDiscount] = useState("");
   const [discountNote, setDiscountNote] = useState("");
+  const [scrolled, setScrolled] = useState(false);
+  const [cartPulse, setCartPulse] = useState(0);
+
+  useReveal();
 
   useEffect(() => {
     const saved = window.localStorage.getItem(CART_KEY);
@@ -72,6 +70,13 @@ function Storefront() {
     return () => { document.body.style.overflow = ""; };
   }, [cartOpen, menuOpen]);
 
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 20);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
+
   const selectedColor = useMemo(
     () => product.colors.find((item) => item.id === color) ?? product.colors[0],
     [color, product.colors],
@@ -85,27 +90,28 @@ function Storefront() {
       color: selectedColor.name,
       quantity: (current?.size === size && current?.color === selectedColor.name ? current.quantity : 0) + quantity,
     }));
+    setCartPulse((value) => value + 1);
     if (open) setCartOpen(true);
   };
 
   const scrollToProduct = () => document.getElementById("product")?.scrollIntoView({ behavior: "smooth" });
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="page-enter min-h-screen bg-background text-foreground">
       <div className="bg-accent px-4 py-2 text-center text-[11px] font-bold uppercase tracking-widest text-accent-foreground">
         {brand.announcement}
       </div>
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+      <header className={`sticky top-0 z-40 border-b transition-[background-color,border-color,box-shadow] duration-300 ${scrolled ? "border-border bg-background/90 shadow-sm backdrop-blur-md" : "border-transparent bg-background/75"}`}>
         <div className="mx-auto grid h-16 max-w-[1440px] grid-cols-[auto_1fr_auto] items-center px-4 sm:px-8">
           <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu" onClick={() => setMenuOpen(true)}><Menu /></Button>
-          <a href="#top" className="font-display text-3xl font-extrabold leading-none md:justify-self-start">{brand.name}</a>
+          <a href="#top" className="font-display text-3xl font-extrabold leading-none transition-opacity hover:opacity-70 md:justify-self-start">{brand.name}</a>
           <nav className="hidden justify-self-center md:flex md:items-center md:gap-8" aria-label="Main navigation">
             <a className="nav-link" href="#product">Shop</a>
             <a className="nav-link" href="#technology">Technology</a>
             <a className="nav-link" href="#faq">FAQ</a>
             <a className="nav-link" href={`mailto:${brand.contactEmail}`}>Contact</a>
           </nav>
-          <Button variant="ghost" size="icon" className="relative justify-self-end" aria-label={`Open cart with ${cart?.quantity ?? 0} items`} onClick={() => setCartOpen(true)}>
+          <Button key={cartPulse} variant="ghost" size="icon" className={`relative justify-self-end ${cartPulse ? "cart-bump" : ""}`} aria-label={`Open cart with ${cart?.quantity ?? 0} items`} onClick={() => setCartOpen(true)}>
             <ShoppingBag />
             {(cart?.quantity ?? 0) > 0 && <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-accent px-1 text-[9px] font-bold text-accent-foreground">{cart?.quantity}</span>}
           </Button>
@@ -114,7 +120,7 @@ function Storefront() {
 
       <main id="top">
         <section className="mx-auto grid min-h-[calc(100svh-96px)] max-w-[1440px] lg:grid-cols-[0.86fr_1.14fr]">
-          <div className="flex flex-col justify-center px-5 py-12 sm:px-10 lg:px-14 lg:py-16">
+          <div className="hero-copy-scroll flex flex-col justify-center px-5 py-12 sm:px-10 lg:px-14 lg:py-16">
             <div className="mb-8 flex items-center gap-3"><span className="h-px w-8 bg-accent" /><span className="eyebrow">{product.eyebrow}</span></div>
             <h1 className="max-w-2xl font-display text-[clamp(4rem,9vw,8.5rem)] font-extrabold uppercase leading-[0.76]">COLD<br /><span className="text-accent">CHANGES.</span><br />SO DO YOU.</h1>
             <p className="mt-8 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg">{product.description}</p>
@@ -123,10 +129,10 @@ function Storefront() {
               <span className="text-xs font-semibold text-muted-foreground">{product.trustLine}</span>
             </div>
           </div>
-          <div className="relative min-h-[56svh] overflow-hidden bg-product md:min-h-[650px] lg:min-h-0">
+          <div className="hero-depth-scroll relative min-h-[56svh] overflow-hidden bg-product md:min-h-[650px] lg:min-h-0">
             <span className="absolute right-4 top-5 z-10 font-mono text-[10px] uppercase text-muted-foreground">THERMAL MAP / ACTIVE</span>
             <div className="absolute left-4 top-4 z-10 rounded-sm border border-foreground/20 bg-background/70 px-3 py-2 backdrop-blur"><span className="block font-mono text-[9px] uppercase text-muted-foreground">Surface response</span><span className="font-display text-xl font-bold">DYNAMIC</span></div>
-            <img src={productAsset.url} alt={`${product.name} in Ash Reactive`} className="h-full w-full object-cover object-center mix-blend-multiply" fetchPriority="high" />
+            <img src={productAsset.url} alt={`${product.name} in Ash Reactive`} width="1200" height="1500" className="hero-image-scroll h-full w-full object-cover object-center mix-blend-multiply will-change-transform" fetchPriority="high" />
             <div className="absolute bottom-5 left-5 right-5 grid grid-cols-3 border border-foreground/15 bg-background/85 backdrop-blur">
               {["Heat reactive", "4-way stretch", "Flat seams"].map((item, index) => <div key={item} className="border-r border-foreground/15 p-3 last:border-0"><span className="font-mono text-[9px] text-accent">0{index + 1}</span><p className="mt-1 text-[10px] font-bold uppercase">{item}</p></div>)}
             </div>
@@ -139,9 +145,9 @@ function Storefront() {
 
         <section className="section-shell py-20 sm:py-28">
           <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-24">
-            <div><p className="eyebrow">The problem / The system</p><h2 className="section-title mt-5">{product.problemHeading}</h2><p className="mt-6 max-w-lg leading-7 text-muted-foreground">{product.problemCopy}</p></div>
+            <div><p data-reveal className="eyebrow">The problem / The system</p><h2 data-reveal className="section-title mt-5">{product.problemHeading}</h2><p data-reveal className="reveal-delay-1 mt-6 max-w-lg leading-7 text-muted-foreground">{product.problemCopy}</p></div>
             <div className="grid gap-px overflow-hidden rounded border border-border bg-border sm:grid-cols-3">
-              {product.quickBenefits.map((benefit, index) => <article key={benefit.title} className="bg-background p-6 sm:min-h-64"><span className="font-mono text-xs text-accent">0{index + 1}</span><h3 className="mt-20 font-display text-2xl font-bold uppercase sm:mt-24">{benefit.title}</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{benefit.text}</p></article>)}
+              {product.quickBenefits.map((benefit, index) => <article key={benefit.title} data-reveal className={`premium-card bg-background p-6 sm:min-h-64 ${index === 0 ? "reveal-delay-1" : index === 1 ? "reveal-delay-2" : "reveal-delay-3"}`}><span className="font-mono text-xs text-accent">0{index + 1}</span><h3 className="mt-20 font-display text-2xl font-bold uppercase sm:mt-24">{benefit.title}</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{benefit.text}</p></article>)}
             </div>
           </div>
         </section>
@@ -149,7 +155,7 @@ function Storefront() {
         <section id="product" className="scroll-mt-24 border-y border-border bg-secondary py-20 sm:py-28">
           <div className="section-shell grid gap-12 lg:grid-cols-2 lg:gap-20">
             <ProductGallery imageUrl={productAsset.url} productName={product.name} />
-            <div className="self-center">
+            <div data-reveal className="self-center">
               <p className="eyebrow">{product.badge} / Series 01</p>
               <h2 className="mt-4 max-w-xl font-display text-5xl font-extrabold uppercase leading-[0.88] sm:text-7xl">{product.name}</h2>
               <div className="mt-5 flex items-baseline gap-3"><span className="text-2xl font-bold">{formatPrice(product.price)}</span><span className="text-sm text-muted-foreground line-through">{formatPrice(product.compareAtPrice)}</span></div>
@@ -174,18 +180,21 @@ function Storefront() {
           </div>
         </section>
 
-        <section id="technology" className="scroll-mt-20 bg-foreground py-20 text-background sm:py-28">
-          <div className="section-shell"><p className="eyebrow text-accent">How it works</p><div className="mt-6 grid gap-8 lg:grid-cols-[0.7fr_1.3fr]"><h2 className="section-title">BUILT TO<br />RESPOND.</h2><div className="divide-y divide-background/20 border-y border-background/20">{product.steps.map((step) => <article key={step.number} className="grid grid-cols-[48px_1fr] gap-5 py-7 sm:grid-cols-[70px_180px_1fr]"><span className="font-mono text-xs text-accent">{step.number}</span><h3 className="font-display text-2xl font-bold uppercase">{step.title}</h3><p className="col-start-2 text-sm leading-6 text-background/65 sm:col-start-3">{step.text}</p></article>)}</div></div></div>
+        <section id="technology" className="scroll-mt-20 bg-foreground text-background">
+          <div className="section-shell grid gap-10 py-20 sm:py-28 lg:min-h-[150svh] lg:grid-cols-[1fr_0.82fr] lg:gap-20">
+            <div className="lg:sticky lg:top-24 lg:h-[calc(100svh-8rem)] lg:self-start"><div className="relative h-full min-h-[520px] overflow-hidden rounded-sm bg-product"><img src={productAsset.url} alt={`${product.name} heat-reactive detail`} width="1200" height="1500" loading="lazy" className="scroll-product-image h-full w-full object-cover mix-blend-multiply will-change-transform" /><div className="absolute inset-x-5 bottom-5 grid grid-cols-3 border border-foreground/15 bg-background/85 text-foreground backdrop-blur-sm">{product.quickBenefits.map((item, index) => <span key={item.title} className="border-r border-foreground/15 p-3 text-[9px] font-bold uppercase last:border-0">0{index + 1} / {item.title}</span>)}</div></div></div>
+            <div className="flex flex-col justify-center py-4 lg:py-[22svh]"><p data-reveal className="eyebrow text-accent">How it works</p><h2 data-reveal className="section-title mt-5">BUILT TO<br />RESPOND.</h2><p data-reveal className="reveal-delay-1 mt-6 max-w-md leading-7 text-background/65">A low-profile thermal system designed to adapt visually as conditions and output change.</p><div className="mt-14 divide-y divide-background/20 border-y border-background/20">{product.steps.map((step) => <article key={step.number} className="scroll-product-stage grid min-h-[32svh] grid-cols-[48px_1fr] content-center gap-5 py-8 sm:grid-cols-[70px_180px_1fr]"><span className="font-mono text-xs text-accent">{step.number}</span><h3 className="font-display text-3xl font-bold uppercase">{step.title}</h3><p className="col-start-2 text-sm leading-6 text-background/65 sm:col-start-3">{step.text}</p></article>)}</div></div>
+          </div>
         </section>
 
         <section className="section-shell py-20 sm:py-28">
           <div className="flex items-end justify-between gap-8"><div><p className="eyebrow">System advantages</p><h2 className="section-title mt-4">ONE LAYER.<br />SIX DETAILS.</h2></div><span className="hidden font-mono text-xs text-muted-foreground sm:block">THERMA / SPEC 01—06</span></div>
-          <div className="mt-12 grid border-l border-t border-border sm:grid-cols-2 lg:grid-cols-3">{product.benefits.map((benefit) => <article key={benefit.code} className="min-h-56 border-b border-r border-border p-6 transition-colors hover:bg-secondary"><span className="grid h-10 w-10 place-items-center rounded-full border border-accent font-mono text-xs text-accent">{benefit.code}</span><h3 className="mt-12 font-display text-2xl font-bold uppercase">{benefit.title}</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{benefit.text}</p></article>)}</div>
+          <div className="mt-12 grid border-l border-t border-border sm:grid-cols-2 lg:grid-cols-3">{product.benefits.map((benefit, index) => <article key={benefit.code} data-reveal className={`premium-card min-h-56 border-b border-r border-border p-6 hover:bg-secondary ${index % 3 === 1 ? "reveal-delay-1" : index % 3 === 2 ? "reveal-delay-2" : ""}`}><span className="grid h-10 w-10 place-items-center rounded-full border border-accent font-mono text-xs text-accent">{benefit.code}</span><h3 className="mt-12 font-display text-2xl font-bold uppercase">{benefit.title}</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{benefit.text}</p></article>)}</div>
         </section>
 
         <section className="section-shell pb-20 sm:pb-28">
           <div className="relative grid min-h-[620px] overflow-hidden rounded bg-product lg:grid-cols-2">
-            <img src={productAsset.url} alt="Heat-reactive balaclava demonstration placeholder" className="h-full min-h-[380px] w-full object-cover mix-blend-multiply lg:absolute lg:inset-0" loading="lazy" />
+            <img src={productAsset.url} alt="Heat-reactive balaclava demonstration placeholder" width="1200" height="1500" className="product-hover h-full min-h-[380px] w-full object-cover mix-blend-multiply lg:absolute lg:inset-0" loading="lazy" />
             <div className="relative col-start-2 flex flex-col justify-end bg-foreground/90 p-7 text-background sm:p-12 lg:m-8 lg:min-h-[540px] lg:bg-foreground/92">
               <span className="eyebrow text-accent">{product.demo.label}</span><h2 className="section-title mt-5">{product.demo.title}</h2><p className="mt-5 max-w-md leading-7 text-background/65">{product.demo.text}</p><Button variant="outline" className="mt-8 h-12 w-fit rounded-sm border-background/30 bg-transparent text-background hover:bg-background hover:text-foreground" disabled>Demo coming soon</Button>
             </div>
@@ -207,9 +216,9 @@ function Storefront() {
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background p-3 shadow-2xl md:hidden"><Button className="h-13 w-full rounded-sm text-xs font-bold uppercase tracking-widest" onClick={() => addToCart()}>Add to cart · {formatPrice(product.price)}</Button></div>
 
-      {menuOpen && <div className="fixed inset-0 z-50 bg-foreground text-background md:hidden"><div className="flex h-16 items-center justify-between border-b border-background/20 px-4"><span className="font-display text-3xl font-extrabold">{brand.name}</span><Button variant="ghost" size="icon" className="text-background hover:bg-background/10 hover:text-background" onClick={() => setMenuOpen(false)} aria-label="Close menu"><X /></Button></div><nav className="grid p-5 text-5xl font-display font-bold uppercase"><a className="border-b border-background/20 py-5" href="#product" onClick={() => setMenuOpen(false)}>Shop</a><a className="border-b border-background/20 py-5" href="#technology" onClick={() => setMenuOpen(false)}>Technology</a><a className="border-b border-background/20 py-5" href="#faq" onClick={() => setMenuOpen(false)}>FAQ</a><a className="py-5" href={`mailto:${brand.contactEmail}`}>Contact</a></nav></div>}
+      {menuOpen && <div className="menu-enter fixed inset-0 z-50 bg-foreground text-background md:hidden"><div className="flex h-16 items-center justify-between border-b border-background/20 px-4"><span className="font-display text-3xl font-extrabold">{brand.name}</span><Button variant="ghost" size="icon" className="text-background hover:bg-background/10 hover:text-background" onClick={() => setMenuOpen(false)} aria-label="Close menu"><X /></Button></div><nav className="grid p-5 text-5xl font-display font-bold uppercase"><a className="border-b border-background/20 py-5 transition-transform hover:translate-x-1" href="#product" onClick={() => setMenuOpen(false)}>Shop</a><a className="border-b border-background/20 py-5 transition-transform hover:translate-x-1" href="#technology" onClick={() => setMenuOpen(false)}>Technology</a><a className="border-b border-background/20 py-5 transition-transform hover:translate-x-1" href="#faq" onClick={() => setMenuOpen(false)}>FAQ</a><a className="py-5 transition-transform hover:translate-x-1" href={`mailto:${brand.contactEmail}`}>Contact</a></nav></div>}
 
-      {cartOpen && <><button className="fixed inset-0 z-50 cursor-default bg-overlay" aria-label="Close cart" onClick={() => setCartOpen(false)} /><aside className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-background shadow-2xl" aria-label="Shopping cart"><div className="grid h-20 grid-cols-[1fr_auto] items-center border-b border-border px-5"><div><span className="eyebrow">Your bag</span><h2 className="font-display text-2xl font-bold uppercase">Cart ({cart?.quantity ?? 0})</h2></div><Button variant="ghost" size="icon" onClick={() => setCartOpen(false)} aria-label="Close cart"><X /></Button></div>{cart ? <div className="flex flex-1 flex-col overflow-y-auto"><div className="grid grid-cols-[110px_1fr] gap-4 border-b border-border p-5"><div className="aspect-square overflow-hidden rounded bg-product"><img src={productAsset.url} alt={product.name} className="h-full w-full object-cover mix-blend-multiply" /></div><div className="min-w-0"><h3 className="font-display text-xl font-bold uppercase leading-none">{product.shortName}</h3><p className="mt-2 text-xs text-muted-foreground">{cart.color} / {cart.size}</p><div className="mt-5 flex items-center justify-between"><div className="flex items-center rounded-sm border border-border"><Button variant="ghost" size="icon" onClick={() => setCart({ ...cart, quantity: Math.max(1, cart.quantity - 1) })} aria-label="Decrease cart quantity"><Minus /></Button><span className="w-7 text-center text-xs font-bold">{cart.quantity}</span><Button variant="ghost" size="icon" onClick={() => setCart({ ...cart, quantity: cart.quantity + 1 })} aria-label="Increase cart quantity"><Plus /></Button></div><span className="font-semibold">{formatPrice(cartTotal)}</span></div><Button variant="ghost" size="sm" className="mt-2 h-7 px-0 text-xs text-muted-foreground" onClick={() => setCart(null)}><Trash2 /> Remove</Button></div></div><div className="mt-auto border-t border-border p-5"><label htmlFor="discount" className="option-label">Discount code</label><div className="mt-2 flex gap-2"><input id="discount" value={discount} onChange={(event) => setDiscount(event.target.value)} placeholder="Enter code" className="h-11 min-w-0 flex-1 rounded-sm border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring" /><Button variant="outline" className="h-11 rounded-sm" onClick={() => setDiscountNote(discount ? "Code will be validated at checkout." : "Enter a code first.")}>Apply</Button></div>{discountNote && <p className="mt-2 text-xs text-muted-foreground">{discountNote}</p>}<div className="mt-6 flex justify-between font-bold"><span>Subtotal</span><span>{formatPrice(cartTotal)}</span></div><p className="mt-2 text-xs text-muted-foreground">Shipping and taxes calculated at checkout.</p><Button className="mt-5 h-14 w-full rounded-sm text-xs font-bold uppercase tracking-widest" onClick={() => setDiscountNote("Checkout provider ready to connect.")}><LockKeyhole /> Secure checkout</Button></div></div> : <div className="grid flex-1 place-items-center p-8 text-center"><div><ShoppingBag className="mx-auto h-8 w-8 text-muted-foreground" /><h3 className="mt-5 font-display text-3xl font-bold uppercase">Your bag is empty</h3><p className="mt-2 text-sm text-muted-foreground">Add the THERMA layer when you’re ready.</p><Button className="mt-6 rounded-sm" onClick={() => { setCartOpen(false); scrollToProduct(); }}>Shop now</Button></div></div>}</aside></>}
+      {cartOpen && <><button className="cart-backdrop fixed inset-0 z-50 cursor-default bg-overlay" aria-label="Close cart" onClick={() => setCartOpen(false)} /><aside className="cart-drawer fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-background shadow-2xl" aria-label="Shopping cart"><div className="grid h-20 grid-cols-[1fr_auto] items-center border-b border-border px-5"><div><span className="eyebrow">Your bag</span><h2 className="font-display text-2xl font-bold uppercase">Cart ({cart?.quantity ?? 0})</h2></div><Button variant="ghost" size="icon" onClick={() => setCartOpen(false)} aria-label="Close cart"><X /></Button></div>{cart ? <div className="flex flex-1 flex-col overflow-y-auto"><div className="cart-item-enter grid grid-cols-[110px_1fr] gap-4 border-b border-border p-5"><div className="aspect-square overflow-hidden rounded bg-product"><img src={productAsset.url} alt={product.name} width="480" height="600" className="product-hover h-full w-full object-cover mix-blend-multiply" /></div><div className="min-w-0"><h3 className="font-display text-xl font-bold uppercase leading-none">{product.shortName}</h3><p className="mt-2 text-xs text-muted-foreground">{cart.color} / {cart.size}</p><div className="mt-5 flex items-center justify-between"><div className="flex items-center rounded-sm border border-border"><Button variant="ghost" size="icon" onClick={() => setCart({ ...cart, quantity: Math.max(1, cart.quantity - 1) })} aria-label="Decrease cart quantity"><Minus /></Button><span className="w-7 text-center text-xs font-bold">{cart.quantity}</span><Button variant="ghost" size="icon" onClick={() => setCart({ ...cart, quantity: cart.quantity + 1 })} aria-label="Increase cart quantity"><Plus /></Button></div><span className="font-semibold">{formatPrice(cartTotal)}</span></div><Button variant="ghost" size="sm" className="mt-2 h-7 px-0 text-xs text-muted-foreground" onClick={() => setCart(null)}><Trash2 /> Remove</Button></div></div><div className="mt-auto border-t border-border p-5"><label htmlFor="discount" className="option-label">Discount code</label><div className="mt-2 flex gap-2"><input id="discount" value={discount} onChange={(event) => setDiscount(event.target.value)} placeholder="Enter code" className="h-11 min-w-0 flex-1 rounded-sm border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring" /><Button variant="outline" className="h-11 rounded-sm" onClick={() => setDiscountNote(discount ? "Code will be validated at checkout." : "Enter a code first.")}>Apply</Button></div>{discountNote && <p className="mt-2 text-xs text-muted-foreground">{discountNote}</p>}<div className="mt-6 flex justify-between font-bold"><span>Subtotal</span><span>{formatPrice(cartTotal)}</span></div><p className="mt-2 text-xs text-muted-foreground">Shipping and taxes calculated at checkout.</p><Button asChild className="mt-5 h-14 w-full rounded-sm text-xs font-bold uppercase tracking-widest"><Link to="/checkout" onClick={() => setCartOpen(false)}><LockKeyhole /> Secure checkout</Link></Button></div></div> : <div className="grid flex-1 place-items-center p-8 text-center"><div><ShoppingBag className="mx-auto h-8 w-8 text-muted-foreground" /><h3 className="mt-5 font-display text-3xl font-bold uppercase">Your bag is empty</h3><p className="mt-2 text-sm text-muted-foreground">Add the THERMA layer when you’re ready.</p><Button className="mt-6 rounded-sm" onClick={() => { setCartOpen(false); scrollToProduct(); }}>Shop now</Button></div></div>}</aside></>}
     </div>
   );
 }
@@ -223,5 +232,5 @@ function ProductGallery({ imageUrl, productName }: { imageUrl: string; productNa
   ];
   const activeView = views[view] ?? views[0];
   if (!activeView) return null;
-  return <div><div className="aspect-[4/5] overflow-hidden rounded bg-product"><img src={imageUrl} alt={`${productName} — ${activeView.label} view`} className={`h-full w-full object-cover mix-blend-multiply transition-transform duration-500 ${activeView.className}`} /></div><div className="mt-3 grid grid-cols-3 gap-3">{views.map((item, index) => <Button key={item.label} variant="outline" className={`h-auto aspect-square overflow-hidden rounded p-0 ${view === index ? "ring-2 ring-foreground ring-offset-2" : ""}`} onClick={() => setView(index)} aria-label={`View ${item.label.toLowerCase()} image`}><img src={imageUrl} alt="" className={`h-full w-full object-cover mix-blend-multiply ${item.className}`} /></Button>)}</div></div>;
+  return <div data-reveal><div className="aspect-[4/5] overflow-hidden rounded bg-product"><img src={imageUrl} alt={`${productName} — ${activeView.label} view`} width="1200" height="1500" className={`product-hover h-full w-full object-cover mix-blend-multiply transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${activeView.className}`} /></div><div className="mt-3 grid grid-cols-3 gap-3">{views.map((item, index) => <Button key={item.label} variant="outline" className={`h-auto aspect-square overflow-hidden rounded p-0 ${view === index ? "ring-2 ring-foreground ring-offset-2" : ""}`} onClick={() => setView(index)} aria-label={`View ${item.label.toLowerCase()} image`}><img src={imageUrl} alt="" width="360" height="450" loading="lazy" className={`h-full w-full object-cover mix-blend-multiply transition-transform duration-500 hover:scale-[1.035] ${item.className}`} /></Button>)}</div></div>;
 }
