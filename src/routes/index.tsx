@@ -47,7 +47,7 @@ function Storefront() {
   const [cart, setCart] = useState<CartItem | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [size, setSize] = useState<string>(product.sizes[0]);
-  const [color, setColor] = useState(product.colors[0].id);
+  const [color, setColor] = useState<string>(product.colors[0].id);
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
   const [discount, setDiscount] = useState("");
   const [discountNote, setDiscountNote] = useState("");
@@ -221,5 +221,7 @@ function ProductGallery({ imageUrl, productName }: { imageUrl: string; productNa
     { label: "Detail", className: "scale-[1.55] translate-y-10" },
     { label: "Profile", className: "scale-100 -translate-x-8" },
   ];
-  return <div><div className="aspect-[4/5] overflow-hidden rounded bg-product"><img src={imageUrl} alt={`${productName} — ${views[view].label} view`} className={`h-full w-full object-cover mix-blend-multiply transition-transform duration-500 ${views[view].className}`} /></div><div className="mt-3 grid grid-cols-3 gap-3">{views.map((item, index) => <Button key={item.label} variant="outline" className={`h-auto aspect-square overflow-hidden rounded p-0 ${view === index ? "ring-2 ring-foreground ring-offset-2" : ""}`} onClick={() => setView(index)} aria-label={`View ${item.label.toLowerCase()} image`}><img src={imageUrl} alt="" className={`h-full w-full object-cover mix-blend-multiply ${item.className}`} /></Button>)}</div></div>;
+  const activeView = views[view] ?? views[0];
+  if (!activeView) return null;
+  return <div><div className="aspect-[4/5] overflow-hidden rounded bg-product"><img src={imageUrl} alt={`${productName} — ${activeView.label} view`} className={`h-full w-full object-cover mix-blend-multiply transition-transform duration-500 ${activeView.className}`} /></div><div className="mt-3 grid grid-cols-3 gap-3">{views.map((item, index) => <Button key={item.label} variant="outline" className={`h-auto aspect-square overflow-hidden rounded p-0 ${view === index ? "ring-2 ring-foreground ring-offset-2" : ""}`} onClick={() => setView(index)} aria-label={`View ${item.label.toLowerCase()} image`}><img src={imageUrl} alt="" className={`h-full w-full object-cover mix-blend-multiply ${item.className}`} /></Button>)}</div></div>;
 }
