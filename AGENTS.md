@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep all THERMA storefront copy, pricing, variants, FAQs, and policy labels in `src/data/store.ts` so future catalog updates do not require UI edits.
