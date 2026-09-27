@@ -61,12 +61,16 @@
   --overlay: oklch(0.05 0.01 255 / 58%);
   --swatch-ash: oklch(0.43 0.008 255);
   --swatch-void: oklch(0.13 0.007 255);
+  --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 180ms;
+  --duration-normal: 320ms;
+  --duration-reveal: 760ms;
 }
 
 @layer base {
   * { border-color: var(--border); }
   html { scroll-behavior: smooth; }
-  body { margin: 0; background: var(--background); color: var(--foreground); font-family: var(--font-sans); }
+  body { margin: 0; overflow-x: clip; background: var(--background); color: var(--foreground); font-family: var(--font-sans); }
   button, a { letter-spacing: 0; }
   ::selection { background: var(--accent); color: var(--accent-foreground); }
   summary::-webkit-details-marker { display: none; }
@@ -104,9 +108,49 @@
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
-  &::after { content: ""; position: absolute; inset: auto 0 -0.35rem; height: 1px; background: var(--accent); transform: scaleX(0); transform-origin: right; transition: transform 180ms ease; }
+  &::after { content: ""; position: absolute; inset: auto 0 -0.35rem; height: 1px; background: var(--accent); transform: scaleX(0); transform-origin: right; transition: transform var(--duration-fast) var(--ease-premium); }
   &:hover::after { transform: scaleX(1); transform-origin: left; }
 }
+
+@utility premium-card {
+  transition: transform var(--duration-normal) var(--ease-premium), box-shadow var(--duration-normal) var(--ease-premium), background-color var(--duration-normal) var(--ease-premium);
+  &:hover { transform: translateY(-3px); box-shadow: 0 18px 50px color-mix(in oklab, var(--foreground) 9%, transparent); }
+}
+
+[data-reveal] { opacity: 1; transform: none; }
+.js [data-reveal] { opacity: 0; transform: translate3d(0, 30px, 0); transition: opacity var(--duration-reveal) var(--ease-premium), transform var(--duration-reveal) var(--ease-premium); transition-delay: var(--reveal-delay, 0ms); }
+.js [data-reveal][data-visible="true"] { opacity: 1; transform: translate3d(0, 0, 0); }
+.reveal-delay-1 { --reveal-delay: 80ms; }
+.reveal-delay-2 { --reveal-delay: 140ms; }
+.reveal-delay-3 { --reveal-delay: 210ms; }
+.page-enter { animation: page-enter var(--duration-normal) var(--ease-premium) both; }
+.cart-backdrop { animation: backdrop-in var(--duration-normal) ease-out both; }
+.cart-drawer { animation: drawer-in var(--duration-normal) var(--ease-premium) both; }
+.cart-item-enter { animation: item-in 500ms var(--ease-premium) 90ms both; }
+.menu-enter { animation: menu-in var(--duration-normal) var(--ease-premium) both; }
+.cart-bump { animation: cart-bump 420ms var(--ease-premium); }
+.product-hover { transition: transform 500ms var(--ease-premium); }
+.product-hover:hover { transform: translate3d(0, -4px, 0) scale(1.012); }
+
+@keyframes page-enter { from { opacity: 0; transform: translate3d(0, 10px, 0); } }
+@keyframes backdrop-in { from { opacity: 0; } }
+@keyframes drawer-in { from { transform: translate3d(100%, 0, 0); } }
+@keyframes item-in { from { opacity: 0; transform: translate3d(0, 12px, 0); } }
+@keyframes menu-in { from { opacity: 0; transform: translate3d(0, -10px, 0); } }
+@keyframes cart-bump { 45% { transform: scale(1.15); } }
+
+@supports (animation-timeline: scroll()) {
+  .hero-copy-scroll { animation: hero-copy linear both; animation-timeline: scroll(root); animation-range: 0 48svh; }
+  .hero-image-scroll { animation: hero-image linear both; animation-timeline: scroll(root); animation-range: 0 70svh; }
+  .hero-depth-scroll { animation: hero-depth linear both; animation-timeline: scroll(root); animation-range: 0 80svh; }
+  .scroll-product-image { animation: product-focus linear both; animation-timeline: view(); animation-range: entry 0% exit 95%; }
+  .scroll-product-stage { animation: stage-focus linear both; animation-timeline: view(); animation-range: entry 10% cover 45%; }
+}
+@keyframes hero-copy { to { opacity: 0.28; transform: translate3d(0, -38px, 0); } }
+@keyframes hero-image { to { transform: translate3d(0, -28px, 0) scale(0.92); } }
+@keyframes hero-depth { to { transform: translate3d(0, 18px, 0); } }
+@keyframes product-focus { 0% { transform: scale(0.94); opacity: 0.55; } 38%, 66% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.96); opacity: 0.8; } }
+@keyframes stage-focus { 0% { opacity: 0.2; transform: translate3d(0, 18px, 0); } 45%, 100% { opacity: 1; transform: none; } }
 
 @utility footer-label {
   font-size: 0.68rem;
@@ -133,9 +177,12 @@
 @media (max-width: 640px) {
   .ticker { justify-content: flex-start; padding-inline: 1.25rem; }
   .ticker span:nth-of-type(n+3), .ticker i:nth-of-type(n+2) { display: none; }
+  .hero-copy-scroll, .hero-image-scroll, .hero-depth-scroll { animation-range-end: 38svh; }
+  .product-hover:hover { transform: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  .js [data-reveal] { opacity: 1 !important; transform: none !important; }
 }
