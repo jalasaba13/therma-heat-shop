@@ -24,13 +24,14 @@ export const Route = createFileRoute("/checkout")({
 });
 
 type FieldName = "email" | "firstName" | "lastName" | "address" | "city" | "postalCode" | "phone" | "country";
+type FieldSpec = { name: Exclude<FieldName, "country">; label: string; type?: string; autoComplete?: string; span?: boolean };
 
 const fieldClass = "h-13 rounded-sm bg-background px-4 text-base shadow-none transition-[border-color,box-shadow] focus-visible:ring-2";
 
 function CheckoutPage() {
   const { brand, product, checkout, policies } = store;
   const [cart, setCart] = useState<CartItem | null>(null);
-  const [shippingId, setShippingId] = useState(checkout.shippingMethods[0].id);
+  const [shippingId, setShippingId] = useState<string>(checkout.shippingMethods[0].id);
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
   const [confirmation, setConfirmation] = useState("");
 
@@ -40,7 +41,7 @@ function CheckoutPage() {
   const subtotal = product.price * (cart?.quantity ?? 0);
   const total = subtotal + shipping.price;
 
-  const fields = useMemo(() => [
+  const fields = useMemo<FieldSpec[]>(() => [
     { name: "email" as const, label: "Email", type: "email", autoComplete: "email", span: true },
     { name: "firstName" as const, label: "First name", autoComplete: "given-name" },
     { name: "lastName" as const, label: "Last name", autoComplete: "family-name" },
@@ -49,6 +50,7 @@ function CheckoutPage() {
     { name: "postalCode" as const, label: "Postal code", autoComplete: "postal-code" },
     { name: "phone" as const, label: "Phone", type: "tel", autoComplete: "tel", span: true },
   ], []);
+  const emailField = fields[0];
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -87,7 +89,7 @@ function CheckoutPage() {
           </div>
 
           <CheckoutSection number="01" title={checkout.contactHeading}>
-            <Field field={fields[0]} error={errors.email} />
+            {emailField && <Field field={emailField} error={errors.email} />}
           </CheckoutSection>
 
           <CheckoutSection number="02" title={checkout.deliveryHeading}>
@@ -121,6 +123,6 @@ function CheckoutSection({ number, title, children }: { number: string; title: s
   return <section className="border-t border-border py-8"><div className="mb-6 flex items-center gap-4"><span className="font-mono text-xs text-accent">{number}</span><h2 className="font-display text-2xl font-bold uppercase">{title}</h2></div>{children}</section>;
 }
 
-function Field({ field, error }: { field: { name: FieldName; label: string; type?: string; autoComplete?: string; span?: boolean }; error?: string }) {
+function Field({ field, error }: { field: FieldSpec; error: string | undefined }) {
   return <div className={field.span ? "sm:col-span-2" : ""}><Label htmlFor={field.name}>{field.label}</Label><Input id={field.name} name={field.name} type={field.type} autoComplete={field.autoComplete} aria-invalid={Boolean(error)} className={`${fieldClass} mt-2 ${error ? "border-destructive" : ""}`} />{error && <p className="mt-1 text-xs text-destructive">{error}</p>}</div>;
 }
