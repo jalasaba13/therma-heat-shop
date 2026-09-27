@@ -71,6 +71,22 @@ export const store = {
     privacy: "Privacy Policy",
     terms: "Terms of Service",
   },
+  checkout: {
+    title: "Secure checkout",
+    demoLabel: "Demo checkout — no payment will be taken",
+    contactHeading: "Contact",
+    deliveryHeading: "Delivery",
+    paymentHeading: "Payment",
+    paymentNote: "Payment processing is not connected yet. Your details remain on this device and no charge will be attempted.",
+    shippingMethods: [
+      { id: "standard", name: "Standard tracked", estimate: "3–5 business days", price: 0 },
+      { id: "express", name: "Express tracked", estimate: "1–2 business days", price: 12 },
+    ],
+    countries: ["Ireland", "United Kingdom", "France", "Germany", "Netherlands", "Spain", "Italy", "Sweden"],
+    paymentMethods: ["Visa", "Mastercard", "Apple Pay"],
+    submitLabel: "Continue in demo mode",
+    demoConfirmation: "Checkout validated. Connect a payment provider to accept payment and place this order.",
+  },
 } as const;
 
 export const formatPrice = (value: number) =>

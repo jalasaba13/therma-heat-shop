@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Keep all THERMA storefront copy, pricing, variants, FAQs, and policy labels in `src/data/store.ts` so future catalog updates do not require UI edits.
+- Share cart state through `src/lib/cart.ts` so the storefront and checkout use one storage contract and remain consistent.
